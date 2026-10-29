@@ -1,0 +1,27 @@
+NEXTFOUNDER - SERVER FEATURES (optional but recommended)
+=========================================================
+The site works without these. They add:
+  1) Lock-screen push notifications (even when the app is closed)  -> netlify/functions/push.js
+  2) Real AI answers in the Nova chat bubble                       -> netlify/functions/ai.js
+
+Both are Netlify Functions, so deploy the folder with the "netlify" directory included
+(GitHub-connected site, or Netlify CLI: netlify deploy --prod). Functions need no npm install.
+
+PUSH NOTIFICATIONS - nothing to configure.
+  Keys are built into push.js. (To use your own keys set VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY in
+  Netlify -> Site configuration -> Environment variables, then redeploy.)
+  Users must: open the site, press "Turn on" in the yellow bar, and allow notifications.
+  iPhone: the app must first be installed (Share -> Add to Home Screen), iOS 16.4 or newer.
+
+AI (Nova) - needs an API key:
+  ANTHROPIC_API_KEY = your key from console.anthropic.com
+  (optional) AI_MODEL
+  Without a key Nova still answers in Basic mode.
+
+Always publish the latest firestore.rules (Studio tab -> "Copy Firestore rules").
+
+NEW IN THIS VERSION
+- WhatsApp: Studio tab -> "WhatsApp messages". Type one word (or nothing) -> message is written -> tap "Send welcome" next to a member -> WhatsApp opens with the message ready. (Needs ANTHROPIC_API_KEY for AI-written text; works with built-in templates without it.)
+  True fully-automatic sending (no tap) needs the WhatsApp Business Cloud API from Meta; not included.
+- Messages: press and hold a message -> Copy / Edit / Delete. "+" button -> Gallery, Camera, Document, Location.
+- You MUST republish the Firestore rules (Studio tab -> Copy Firestore rules) or edit, documents and WhatsApp tracking will be refused.

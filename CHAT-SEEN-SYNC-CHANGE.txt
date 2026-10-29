@@ -1,0 +1,5 @@
+NextFounder V50 patch
+
+Chat seen receipts now store the timestamp of the last incoming message seen, instead of the local device time. This makes the receipt stable across devices signed into the same account and avoids a device-local timer being treated as the seen timestamp. This patch does not delete messages.
+
+Note: the current V50 source did not contain a message auto-delete/countdown implementation; this patch synchronizes the existing DM seen receipt through the existing Firestore presence document. Deploy and test with two devices signed into the same account.

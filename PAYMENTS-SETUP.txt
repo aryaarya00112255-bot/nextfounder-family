@@ -1,0 +1,137 @@
+NEXTFOUNDER - AUTOMATIC PAYMENTS (v37)
+=======================================
+
+KYA BADLA
+- Pehle "I've paid" dabate hi app khud tick laga deta tha, paisa check hi nahi hota tha.
+  Isliye bina payment ke tick lag jata tha aur baad me hat jata tha.
+- Ab tick / star / chat unlock / course SIRF server lagata hai, aur tab jab Razorpay
+  khud confirm kare ki paisa aa gaya. Koi button dabake unlock nahi kar sakta.
+- Payment ke baad tick apne aap lagta hai, owner approval nahi, "Waiting for owner" nahi.
+- Ek baar paid tick app se kabhi hat'ta nahi (sirf owner khud hataye to).
+
+Personal UPI ID (PhonePe/GPay number) se app ko pata hi nahi chal sakta ki paisa aaya ya nahi.
+Isliye automatic ke liye payment gateway (Razorpay) zaroori hai. Neeche 4 step hain.
+
+
+STEP 1 - Razorpay account (paisa seedha aapke bank me aata hai)
+  1. razorpay.com pe account banao, KYC pura karo (activation me kuch din lag sakte hain).
+  2. Pehle TEST mode me try karo: Dashboard -> Settings -> API Keys -> Generate Test Key.
+     Test key rzp_test_... se asli paisa nahi katta. Sab theek chale to Live Key banao.
+  3. Key Id aur Key Secret copy karo.
+  4. Razorpay ka fee lagta hai. Current rate unki pricing page pe dekh lo.
+
+STEP 2 - Firebase service account (server ko tick likhne ki permission)
+  1. console.firebase.google.com -> project nextfounder-52b98 -> (gear) Project settings
+     -> Service accounts -> "Generate new private key" -> JSON file download hogi.
+  2. Us file me se do cheezein chahiye: "client_email" aur "private_key".
+  3. Ye file kisi ko mat bhejo, GitHub pe mat daalo. Ye aapke database ki chaabi hai.
+
+STEP 3 - Netlify me 4 environment variables
+  Netlify -> Site configuration -> Environment variables -> Add:
+    RAZORPAY_KEY_ID        = rzp_test_xxxxx   (live ke baad rzp_live_xxxxx)
+    RAZORPAY_KEY_SECRET    = (Razorpay secret)
+    FIREBASE_SA_EMAIL      = (client_email, ...iam.gserviceaccount.com)
+    FIREBASE_SA_KEY        = (private_key poora, -----BEGIN PRIVATE KEY----- se END tak)
+  Phir site dobara deploy karo (deploy.bat ya deploy.sh, functions ke saath).
+
+STEP 4 - Firestore rules dobara publish karo (ZAROORI)
+  Studio tab -> "Copy Firestore rules" -> Firebase console -> Firestore -> Rules ->
+  sab purana hatake paste -> Publish.
+  Naye rules me members apne aap badge nahi likh sakte. Sirf server aur owner likh sakte hain.
+
+OPTIONAL BACKUP - Webhook (agar user payment ke baad app band kar de)
+  App wapas khulte hi payment check kar leta hai, isliye webhook zaroori nahi.
+  Phir bhi lagana ho: Razorpay -> Settings -> Webhooks -> Add:
+    URL:    https://AAPKI-SITE.netlify.app/.netlify/functions/pay
+    Events: payment.captured, order.paid
+    Secret: koi lamba password, wahi Netlify me RAZORPAY_WEBHOOK_SECRET me daalo.
+
+
+USER KE LIYE KAISE CHALTA HAI
+  Store -> Blue tick -> Pay -> QR code ya PhonePe / GPay / Paytm chuno -> 4 minute me pay karo
+  -> tick apne aap lag jata hai, receipt Payment history me aa jati hai.
+  Owner ko notification milta hai: "X paid Rs 49 - activated automatically".
+
+KAB TAK STEP 1-4 NAHI HUE
+  App purane tareeke pe chalega: user UTR daalta hai aur owner Approve karta hai.
+  Is mode me tick TABHI lagta hai jab owner approve kare. Bina payment ke kuch unlock nahi hota.
+
+PRICE
+  Server me: blue tick 49, featured star 99, course 99, user chat 74
+  (netlify/functions/pay.js me PRICE). index.html me bhi PRICE same rakho (sirf dikhane ke liye).
+
+OWNER TOGGLE (user-to-user chat)
+  Studio / Store me "User chat: Free" button. Free = sab members message kar sakte hain.
+  Paid = members ko pehle Rs 74 ka unlock dikhta hai.
+
+TESTING NOTE
+  Server code mock Razorpay/Firestore ke saath test hua hai (order, unlock, dobara call par double
+  nahi hona, webhook signature). Asli Razorpay test key ke saath ek baar khud test payment karke dekhna.
+
+
+=== v38 FIXES ===
+1) "No appropriate payment method found" (Razorpay screen)
+   Reason: the app forced a UPI-only payment screen. If UPI is not enabled in your Razorpay account
+   (or you are in Test mode), Razorpay has nothing to show. Now the app opens Razorpay's normal screen
+   with every method that is enabled (UPI, cards, netbanking, wallets).
+   If you still see this message, enable methods here:
+   Razorpay Dashboard -> Settings -> Configuration -> Payment Methods -> turn ON UPI (and Cards / Netbanking).
+   UPI and some methods need your account KYC to be fully activated. In TEST mode use UPI id: success@razorpay
+
+2) Server could not save the tick (database name)
+   Your Firestore database is named "default" (not "(default)"). netlify/functions/pay.js used only
+   "(default)", so every read/write failed after a real payment. It now finds the right database by itself.
+   Redeploy with deploy.bat so the new pay.js goes live.
+
+3) New Instagram-style screens
+   Store -> Subscriptions list -> plan page -> purchase sheet (Buy) -> Razorpay -> automatic activation.
+
+
+=== v39 FIXES ===
+1) Blue tick / People red counts / paid unlocks not showing  (ROOT CAUSE FOUND)
+   The app code that listens to single documents (settings/verified, purchases) crashed, and because of the
+   crash the other listeners never started: badges (ticks), People inbox (red counts), etc.
+   Fixed in the Firestore helper. After this update ticks, stars, unlocks and People red numbers load.
+2) "View all payment methods" now opens a list: UPI, QR code, PhonePe, Google Pay, Paytm, Cards/Netbanking.
+   Pick one, tap Buy: Razorpay opens with that method first. The other methods stay available.
+   UPI apps installed on the phone are detected by Razorpay itself (UPI Intent must be ON in Razorpay).
+3) Owner switch: Store (owner) -> "Blue tick & Star subscriptions" On/Off.
+   Off = members see "Unavailable" and the server refuses new orders. People who already own it keep it.
+   Default is Off until you turn it On.
+
+
+=== v41 ===
+- People: search no longer hides the Message / Vote buttons. Search row stays fixed while you scroll.
+- "Messages from members" list: red counts, tap a person -> chat opens (the chat window now opens from any tab).
+- Settings (gear next to Log out): Notifications switches, Change password, payment history, support.
+- Chat: @name, @all, reply (button or swipe right), highlight for messages meant for you.
+- Notification switches are saved in Firestore (push/<uid>.prefs) and netlify/functions/push.js obeys them,
+  so redeploy with deploy.bat. Firestore rules need no change.
+
+=== v42 ===
+- People cards redesigned (cover, avatar ring, Message button, blue-tick progress). Profile menu restyled.
+- Profile menu / bell panel no longer hide behind the fixed search row.
+
+=== v43 ===
+- Owner switch "User chat: Free / Paid ₹74" now locks BOTH places: the profile Message button and
+  "Messages from members" (the icon next to the search bar). Locked users see the ₹74 charge, not the message text.
+- People who already bought member chat keep full access.
+
+=== v44 ===
+- Chats show centered date separators: Today / Yesterday / weekday / date.
+
+=== v45 ===
+- Date separators: Today, Yesterday, older days as dd/mm/yyyy.
+- Keyboard: chat window and AI panel follow the visible area so their header stays on screen.
+
+
+V46 ME KYA NAYA HAI
+- Keyboard: chat ka "Type a message" ab hamesha keyboard ke theek upar rehta hai (WhatsApp jaisa). Chat ke andar Nova AI ka
+  button chhup jata hai taaki send button na dabe.
+- Chat header: voice call aur video call ke round icon, aur side me three dot (⋮). Menu me: Group members, Screen share,
+  Report. Kisi ke message ko dabake rakho to "Report message" bhi milta hai.
+- Report: user reason chunta hai (Spam, Abusive, Fake profile, Inappropriate, Other) + note. Owner ko notification milta hai.
+- Owner: Studio (adm) me "Reports" card. Har person ke saamne kitne report, reason, note. Block dabao to uski access band,
+  "Blocked people" se Unblock bhi ho jata hai.
+- IMPORTANT: Firestore rules dobara publish karo (Studio -> Copy Firestore rules -> Firebase console -> Rules -> Publish).
+  Naye rules me `reports` collection hai. Bina publish kiye report save nahi hoga.

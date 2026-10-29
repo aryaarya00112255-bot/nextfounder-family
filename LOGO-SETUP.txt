@@ -1,0 +1,8 @@
+NextFounder V47 — Owner app logo settings
+
+Owner Studio now includes “Change app logo”.
+Recommended upload: square 512 x 512 px PNG or JPG, under 1 MB.
+The site automatically resizes the chosen image to 512 px and saves it in Firestore settings/brand.
+The selected logo appears alongside the NextFounder wordmark in the app/site interface and updates the page favicon/apple-touch icon while the page is open.
+
+Important: a PWA's installed home-screen icon is controlled by manifest.webmanifest and cached by the browser/Android launcher. This in-app setting cannot reliably replace that installed icon for all users immediately. Updating the actual installed icon for everyone requires publishing the icon asset/manifest and users may need to reinstall or refresh the installed PWA. Closed-app Web Push notification icons also remain the deployed static icon until the push setup is changed to use a hosted logo asset.

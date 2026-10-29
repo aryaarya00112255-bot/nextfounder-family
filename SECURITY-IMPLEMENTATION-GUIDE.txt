@@ -1,0 +1,29 @@
+NEXTFOUNDER V49 SECURITY FOUNDATION — READ BEFORE DEPLOYING
+=========================================================
+
+This patch preserves the existing app files and adds server-side enforcement for the AI Business Idea Lab owner lock, removes the hard-coded VAPID private-key fallback, and closes the unsafe Firestore owner self-claim path.
+
+IMPORTANT: a ZIP alone cannot finish production security. You must complete the steps below before deploying.
+
+1) OWNER CLAIM / FIRESTORE RULES
+- The Firestore rule for creating settings/owner now requires Firebase Auth custom claim owner=true. This prevents an arbitrary first user from claiming the owner role.
+- The existing client-side “first time — create owner account” flow will no longer be able to create the owner record until an administrator assigns the custom claim and initializes settings/owner. Do NOT publish the new rules until you have a secure owner bootstrap path ready, or the owner setup may be blocked.
+- Assign custom claims only from a trusted Admin SDK environment (never from browser code). The trusted UID must be the founder’s actual Firebase Auth UID.
+- Keep settings/owner read-only to members and never permit clients to update/delete it.
+
+2) BUSINESS HUB OWNER LOCK
+- AI Idea Lab requests now include feature=ideaLab. The Netlify function checks settings/businessFeatures server-side; explicit false returns HTTP 403 even if someone manually enables the UI.
+- The client-side locks for Team Finder, Investor Hub and Learning remain UI controls; do not treat them as server-secure until each data/API path is independently gated. Firestore rules already gate businessListings reads/writes with investorHub, but other collections must be reviewed separately.
+
+3) PUSH KEYS
+- The built-in VAPID private key fallback was removed. Configure VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and VAPID_SUBJECT in Netlify environment variables and redeploy. Generate a fresh key pair; do not reuse any previously exposed private key. Without keys, push returns 503 instead of silently using a bundled private key.
+
+4) PAID FEATURES
+- This patch does NOT claim paid Business Hub access is complete. Razorpay payment entitlements must be granted only by the server after Razorpay confirms a captured payment, and each paid feature's backend/data route must verify that entitlement. Do not mark a feature paid in production until that server-side entitlement path is implemented and tested. Existing store payments are separate from the new Business Hub feature toggles.
+
+5) DEPLOY CHECKLIST
+- Set FIREBASE_PROJECT_ID and FIREBASE_API_KEY in Netlify; configure AI key if Nova is used.
+- Configure fresh VAPID keys as above.
+- Set up trusted owner bootstrap/custom claim before publishing updated Firestore rules.
+- Test with two accounts: founder account and ordinary member account. Verify ordinary account cannot edit settings/owner or settings/businessFeatures; locked AI Idea Lab must return 403.
+- Test payments in Razorpay test mode before live mode. Never place service-account private keys in index.html or any public file.

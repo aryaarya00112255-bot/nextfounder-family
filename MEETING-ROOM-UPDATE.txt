@@ -1,0 +1,7 @@
+NextFounder meeting update notes
+
+This package contains a visual meeting stage and WebRTC signaling for a two-person call using Firestore. It is not a verified multiparty meeting service. Reliable calls across restrictive networks usually require a TURN service; this package currently uses public STUN servers only. The LiveKit token function exists, but the frontend must be explicitly integrated with the LiveKit client before it can use LiveKit.
+
+The outer meeting toolbar now forwards microphone/camera clicks to the actual media-track controls instead of merely changing the button appearance. The screen-share button forwards to the existing screen-share implementation. The >10 participant selector displays the Pro notice; this is not a payment checkout and does not grant a paid plan.
+
+Before production use: configure and test a TURN server or integrate LiveKit end-to-end; verify owner settings server-side; connect a real payment provider and webhook; test with at least two accounts/devices and verify Firestore rules. No claim of live production testing is made.

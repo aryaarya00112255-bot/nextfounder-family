@@ -1,0 +1,15 @@
+{
+  "name": "nextfounder-v56-two-way-voice",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NextFounder Netlify Functions",
+  "main": "sw.js",
+  "scripts": {
+    "test": "echo \"no tests configured\""
+  },
+  "license": "UNLICENSED",
+  "type": "commonjs",
+  "dependencies": {
+    "livekit-server-sdk": "^2.13.3"
+  }
+}
